@@ -5,9 +5,11 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 
+#define FPS 30
+#define FRAME_TARGET_TIME (1000 / FPS)
+
 extern SDL_Window* window;
 extern SDL_Renderer* renderer;
-
 extern SDL_Texture* color_buffer_texture;
 // Declare a pointer to an array of uint32 elements
 extern uint32_t* color_buffer;
