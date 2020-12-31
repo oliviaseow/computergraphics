@@ -81,7 +81,17 @@ vec2_t project(vec3_t point) {
 
 void update(void) {
 
-	while (!SDL_TICKS_PASSED(SDL_GetTicks(), previous_frame_time + FRAME_TARGET_TIME));
+	// while loops are processor instructions, part of the executor
+	// process needs to share CPU with other tasks and not burn a lot of resources doing nothing
+	// while loops are going to consume 100% of CPU core, don't want to have processor caught up here
+	// while (!SDL_TICKS_PASSED(SDL_GetTicks(), previous_frame_time + FRAME_TARGET_TIME));
+
+	// https://wiki.libsdl.org/SDL_Delay are using OS instructions to yield attention to other processes
+	int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
+
+	if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME) {
+		SDL_Delay(time_to_wait);
+	}
 
 	previous_frame_time = SDL_GetTicks(); //how many ms since SDL_Init
 
