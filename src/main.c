@@ -12,6 +12,12 @@
 
 triangle_t triangles_to_render[N_MESH_FACES];
 
+// void draw_triangle(x0, y0, x1, y1, x2, y2) {
+// 	draw_line(x0, y0);
+// 	draw_line(x1, y1);
+// 	draw_line(x2, y2);
+// }
+
 vec3_t camera_position = { .x = 0, .y = 0, .z = -5};
 vec3_t cube_rotation = { .x = 0, .y = 9, .z = 0};
 
@@ -155,6 +161,8 @@ void render(void) {
 	// draw_pixel(50, 50, 0xFFFFFF00);
 	// draw_rect(300, 200, 300, 150, 0xFFFF00FF);
 
+	draw_line(100, 200, 300, 50, 0xFF00FF00);
+
 	// loop all projected triangles and render them
 		for (int i = 0; i < N_MESH_FACES; i++) {
 			triangle_t triangle = triangles_to_render[i];
@@ -191,11 +199,11 @@ int main(void) {
 
 	//vec3_t myvector = {2.0, 3.0, -4.0};
 
-	camera_t mycam = {
-		{ 0, 0, 0},
-		{ 0.3, -2.0, 0.0 },
-		0.78
-	};
+	// camera_t mycam = {
+	// 	{ 0, 0, 0},
+	// 	{ 0.3, -2.0, 0.0 },
+	// 	0.78
+	// };
 
 	// naive implementation is tied to speed of processor clock
 	// but we don't have different machines to have different speeds
