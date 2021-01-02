@@ -37,3 +37,4 @@ void array_free(void* array) {
     if (array != NULL) {
         free(ARRAY_RAW_DATA(array));
     }
+}
