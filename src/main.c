@@ -26,7 +26,7 @@ bool is_running = false;
 int previous_frame_time = 0;
 
 
-vec3_t camera_position = { .x = 0, .y = 0, .z = -5};
+vec3_t camera_position = { 0, 0, 0};
 //vec3_t cube_rotation = { .x = 0, .y = 0, .z = 0};
 float fov_factor = 640;//640;
 
@@ -58,8 +58,15 @@ void setup(void) {
 	// loads the hard coded cube values in the mesh data structure
 	//load_cube_mesh_data();
 
-	load_obj_file_data("./assets/cube.obj");
+	load_obj_file_data("./assets/cube2.obj");
 
+	// vec3_t a = { 2.5,  6.4,  3.0};
+	// vec3_t b = { -2.2, 1.4, -1.0};
+
+	// float a_length = vec3_length(a);
+	// float b_length = vec3_length(b);
+
+	// vec3_t add_ab = vec3_add(a,b);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -117,8 +124,8 @@ void update(void) {
 	triangles_to_render = NULL; //replace at every loop
 
 	mesh.rotation.x += 0.01;
-	mesh.rotation.y += 0.00;
-	mesh.rotation.z += 0.00;
+	mesh.rotation.y += 0.01;
+	mesh.rotation.z += 0.01;
 
 	// loop all triangle faces
 	int num_faces = array_length(mesh.faces);
@@ -132,6 +139,10 @@ void update(void) {
 
 		triangle_t projected_triangle;
 
+		vec3_t transformed_vertices[3];
+
+		// PERFORM TRANSFORMATION
+
 		//loop all three vertices of this current face and apply transformations
 		for (int j = 0; j < 3; j++) {
 			vec3_t transformed_vertex = face_vertices[j];
@@ -141,10 +152,48 @@ void update(void) {
 			transformed_vertex = vec3_rotate_z(transformed_vertex, mesh.rotation.z);
 
 			// translate the vertex away from the camera
-			transformed_vertex.z -= camera_position.z;
+			transformed_vertex.z += 5;
+
+			// Save transformed vertex in the array of transformed vertices
+			transformed_vertices[j] = transformed_vertex;
+
+		}
+		
+		// CHECK BACKFACE CULLING
+		vec3_t vector_a = transformed_vertices[0]; //   A
+		vec3_t vector_b = transformed_vertices[1]; // /   \ //
+		vec3_t vector_c = transformed_vertices[2]; // C---B
+
+		// Get the vector subtraction of B-A and C-A
+		vec3_t vector_ab = vec3_subtract(vector_b, vector_a);
+		vec3_t vector_ac = vec3_subtract(vector_c, vector_a);
+		vec3_normalize(&vector_ab);
+		vec3_normalize(&vector_ac);
+
+		// compute face normal using cross product to find perpendicular
+		// because we're using left handed system handedness, z values grow inside monitor
+		// for cross product to work properly
+		vec3_t normal = vec3_cross(vector_ab, vector_ac);
+
+		//normalize the face normal vector
+		vec3_normalize(&normal); //exercise to pass a variable by reference
+
+		// find vector bewteen point in the triangle and the camera origin
+		vec3_t camera_ray = vec3_subtract(camera_position, vector_a);
+
+		// calculate how aligned face normal is with camera ray using dot product
+		float dot_normal_camera = vec3_dot(normal, camera_ray);
+
+		// bypass triangles that are looking away from the camera
+		if (dot_normal_camera < 0) {
+			continue;
+		}
+
+		// PERFORM PROJECTION FROM 3D TO 2D FACES by looping all three vertices
+		for (int j = 0; j < 3; j++) {	
 
 			// project current vertex
-			vec2_t projected_point = project(transformed_vertex);
+			vec2_t projected_point = project(transformed_vertices[j]);
 
 			// sclae and translate projected points to the middle of the screen
 			projected_point.x += (window_width / 2);
@@ -197,6 +246,24 @@ void render(void) {
 	//draw_line(100, 200, 300, 50, 0xFF00FF00);
 
 	// loop all projected triangles and render them
+	// 	for (int i = 0; i < num_triangles; i++) {
+	// 	//for (int i = 0; i < N_MESH_FACES; i++) {
+	// 		triangle_t triangle = triangles_to_render[i];
+
+	// 		//Draw vertex points
+	// 		draw_rect(triangle.points[0].x, triangle.points[0].y, 3, 3, 0xFFFFFF00);
+	// 		draw_rect(triangle.points[1].x, triangle.points[1].y, 3, 3, 0xFFFFFF00);
+	// 		draw_rect(triangle.points[2].x, triangle.points[2].y, 3, 3, 0xFFFFFF00);
+
+	// 		//Draw unfilled triangle faces
+	// 		draw_triangle(
+	// 			triangle.points[0].x, triangle.points[0].y, //vertex A
+	// 			triangle.points[1].x, triangle.points[1].y, //vertex B
+	// 			triangle.points[2].x, triangle.points[2].y, //vertex C
+	// 			0xFF00FF00);
+	// }
+
+	//loop all projected triangles and render them
 		for (int i = 0; i < num_triangles; i++) {
 		//for (int i = 0; i < N_MESH_FACES; i++) {
 			triangle_t triangle = triangles_to_render[i];
@@ -206,13 +273,22 @@ void render(void) {
 			draw_rect(triangle.points[1].x, triangle.points[1].y, 3, 3, 0xFFFFFF00);
 			draw_rect(triangle.points[2].x, triangle.points[2].y, 3, 3, 0xFFFFFF00);
 
+			//Draw filled triangle faces
+			draw_filled_triangle(
+				triangle.points[0].x, triangle.points[0].y, //vertex A
+				triangle.points[1].x, triangle.points[1].y, //vertex B
+				triangle.points[2].x, triangle.points[2].y, //vertex C
+				0xFF00FF00);
+
 			//Draw unfilled triangle faces
 			draw_triangle(
 				triangle.points[0].x, triangle.points[0].y, //vertex A
 				triangle.points[1].x, triangle.points[1].y, //vertex B
 				triangle.points[2].x, triangle.points[2].y, //vertex C
-				0xFF00FF00);
+				0x00000000);
 	}
+
+	//draw_filled_triangle(300, 100, 50, 400, 500, 700, 0xFF00FF00);
 
 	// for (int i = 0; i < N_POINTS; i++) {
 	// 	vec2_t projected_point = projected_points[i];
