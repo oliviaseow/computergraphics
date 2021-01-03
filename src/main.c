@@ -41,6 +41,11 @@ float fov_factor = 640;//640;
 ///////////////////////////////////////////////////////////////////////////////
 
 void setup(void) {
+
+	// initialize render mode and triangle culling method
+	render_method = RENDER_WIRE;
+	cull_method = CULL_BACKFACE;
+
 	// Allocate the required bytes in memory for the color buffer
 	// Cast to uint32_t, which is type of color buffer
 	color_buffer = (uint32_t*) malloc(sizeof(uint32_t) * window_width * window_height);
@@ -84,6 +89,18 @@ void process_input(void) {
 		case SDL_KEYDOWN:
 			if (event.key.keysym.sym == SDLK_ESCAPE)
 				is_running = false;
+			if (event.key.keysym.sym == SDLK_1)
+				render_method = RENDER_WIRE_VERTEX;
+			if (event.key.keysym.sym == SDLK_2)
+				render_method = RENDER_WIRE;
+			if (event.key.keysym.sym == SDLK_3)
+				render_method = RENDER_FILL_TRIANGLE;
+			if (event.key.keysym.sym == SDLK_4)
+				render_method = RENDER_FILL_TRIANGLE_WIRE;
+			if (event.key.keysym.sym == SDLK_c)
+				cull_method = CULL_BACKFACE;
+			if (event.key.keysym.sym == SDLK_d)
+				cull_method = CULL_NONE;
 			break;
 	}
 }
@@ -159,34 +176,36 @@ void update(void) {
 
 		}
 		
-		// CHECK BACKFACE CULLING
-		vec3_t vector_a = transformed_vertices[0]; //   A
-		vec3_t vector_b = transformed_vertices[1]; // /   \ //
-		vec3_t vector_c = transformed_vertices[2]; // C---B
+		if (cull_method == CULL_BACKFACE) {
+	 		// CHECK BACKFACE CULLING
+			vec3_t vector_a = transformed_vertices[0]; //   A
+			vec3_t vector_b = transformed_vertices[1]; // /   \ //
+			vec3_t vector_c = transformed_vertices[2]; // C---B
 
-		// Get the vector subtraction of B-A and C-A
-		vec3_t vector_ab = vec3_subtract(vector_b, vector_a);
-		vec3_t vector_ac = vec3_subtract(vector_c, vector_a);
-		vec3_normalize(&vector_ab);
-		vec3_normalize(&vector_ac);
+			// Get the vector subtraction of B-A and C-A
+			vec3_t vector_ab = vec3_subtract(vector_b, vector_a);
+			vec3_t vector_ac = vec3_subtract(vector_c, vector_a);
+			vec3_normalize(&vector_ab);
+			vec3_normalize(&vector_ac);
 
-		// compute face normal using cross product to find perpendicular
-		// because we're using left handed system handedness, z values grow inside monitor
-		// for cross product to work properly
-		vec3_t normal = vec3_cross(vector_ab, vector_ac);
+			// compute face normal using cross product to find perpendicular
+			// because we're using left handed system handedness, z values grow inside monitor
+			// for cross product to work properly
+			vec3_t normal = vec3_cross(vector_ab, vector_ac);
 
-		//normalize the face normal vector
-		vec3_normalize(&normal); //exercise to pass a variable by reference
+			//normalize the face normal vector
+			vec3_normalize(&normal); //exercise to pass a variable by reference
 
-		// find vector bewteen point in the triangle and the camera origin
-		vec3_t camera_ray = vec3_subtract(camera_position, vector_a);
+			// find vector bewteen point in the triangle and the camera origin
+			vec3_t camera_ray = vec3_subtract(camera_position, vector_a);
 
-		// calculate how aligned face normal is with camera ray using dot product
-		float dot_normal_camera = vec3_dot(normal, camera_ray);
+			// calculate how aligned face normal is with camera ray using dot product
+			float dot_normal_camera = vec3_dot(normal, camera_ray);
 
-		// bypass triangles that are looking away from the camera
-		if (dot_normal_camera < 0) {
-			continue;
+			// bypass triangles that are looking away from the camera
+			if (dot_normal_camera < 0) {
+				continue;
+			}
 		}
 
 		// PERFORM PROJECTION FROM 3D TO 2D FACES by looping all three vertices
@@ -268,24 +287,31 @@ void render(void) {
 		//for (int i = 0; i < N_MESH_FACES; i++) {
 			triangle_t triangle = triangles_to_render[i];
 
-			//Draw vertex points
-			draw_rect(triangle.points[0].x, triangle.points[0].y, 3, 3, 0xFFFFFF00);
-			draw_rect(triangle.points[1].x, triangle.points[1].y, 3, 3, 0xFFFFFF00);
-			draw_rect(triangle.points[2].x, triangle.points[2].y, 3, 3, 0xFFFFFF00);
-
 			//Draw filled triangle faces
-			draw_filled_triangle(
-				triangle.points[0].x, triangle.points[0].y, //vertex A
-				triangle.points[1].x, triangle.points[1].y, //vertex B
-				triangle.points[2].x, triangle.points[2].y, //vertex C
-				0xFF00FF00);
+			if (render_method == RENDER_FILL_TRIANGLE || render_method == RENDER_FILL_TRIANGLE_WIRE) {
+				draw_filled_triangle(
+					triangle.points[0].x, triangle.points[0].y, //vertex A
+					triangle.points[1].x, triangle.points[1].y, //vertex B
+					triangle.points[2].x, triangle.points[2].y, //vertex C
+					0xFF555555);
+			}
 
-			//Draw unfilled triangle faces
-			draw_triangle(
-				triangle.points[0].x, triangle.points[0].y, //vertex A
-				triangle.points[1].x, triangle.points[1].y, //vertex B
-				triangle.points[2].x, triangle.points[2].y, //vertex C
-				0x00000000);
+			if (render_method == RENDER_WIRE || render_method == RENDER_WIRE_VERTEX || render_method == RENDER_FILL_TRIANGLE_WIRE) {
+				//Draw unfilled triangle faces
+				draw_triangle(
+					triangle.points[0].x, triangle.points[0].y, //vertex A
+					triangle.points[1].x, triangle.points[1].y, //vertex B
+					triangle.points[2].x, triangle.points[2].y, //vertex C
+					0xFFFFFF);
+			}
+
+			if (render_method == RENDER_WIRE_VERTEX ) {
+				//Draw vertex points
+				// -3 and 6 ensures that rectangles sit in the center of the vertex
+				draw_rect(triangle.points[0].x - 3, triangle.points[0].y - 3, 6, 6, 0xFFFFFF00);
+				draw_rect(triangle.points[1].x - 3, triangle.points[1].y - 3, 6, 6, 0xFFFFFF00);
+				draw_rect(triangle.points[2].x - 3, triangle.points[2].y - 3, 6, 6, 0xFFFFFF00);
+			}
 	}
 
 	//draw_filled_triangle(300, 100, 50, 400, 500, 700, 0xFF00FF00);
