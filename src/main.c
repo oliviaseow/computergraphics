@@ -73,7 +73,7 @@ void setup(void) {
 	// loads the hard coded cube values in the mesh data structure
 	load_cube_mesh_data(); //load from static array of vertices and faces
 
-	//load_obj_file_data("./assets/cube2.obj");
+	//load_obj_file_data("./assets/cube.obj");
 
 	// vec3_t a = { 2.5,  6.4,  3.0};
 	// vec3_t b = { -2.2, 1.4, -1.0};
