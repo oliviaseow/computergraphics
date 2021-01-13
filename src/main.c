@@ -71,9 +71,9 @@ void setup(void) {
 	proj_matrix = mat4_make_perspective(fov, aspect, znear, zfar);
 
 	// loads the hard coded cube values in the mesh data structure
-	load_cube_mesh_data(); //load from static array of vertices and faces
+	//load_cube_mesh_data(); //load from static array of vertices and faces
 
-	//load_obj_file_data("./assets/cube.obj");
+	load_obj_file_data("./assets/f22.obj");
 
 	// vec3_t a = { 2.5,  6.4,  3.0};
 	// vec3_t b = { -2.2, 1.4, -1.0};
@@ -243,6 +243,9 @@ void update(void) {
 			projected_points[j].x *= (window_width / 2.0);
 			projected_points[j].y *= (window_height / 2.0);
 
+			//invert y values to account for flipped screen y coordinate
+			projected_points[j].y *= -1;
+
 			// translate projected points to the middle of the screen
 			projected_points[j].x += (window_width / 2.0);
 			projected_points[j].y += (window_height / 2.0);
@@ -401,7 +404,6 @@ void render(void) {
 ///////////////////////////////////////////////////////////////////////////////
 // Free the memory that was dynamically allocated by the program
 ///////////////////////////////////////////////////////////////////////////////
-
 
 void free_resources(void) {
 	free(color_buffer); //raw free call
