@@ -10,6 +10,13 @@
 #include "matrix.h"
 #include "light.h"
 
+
+typedef struct {
+	float u;
+	float v;
+} tex2_t;
+
+
 // #define N_POINTS (9*9*9)
 
 //const int N_POINTS = 9*9*9
